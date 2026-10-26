@@ -78,10 +78,7 @@ app.post("/api/sessions", express.json(), async (req, res) => {
   }
 
   // validate scheduledAt
-  if (
-    typeof scheduledAt !== "string" ||
-    isNaN(Date.parse(scheduledAt))
-  ) {
+  if (typeof scheduledAt !== "string" || isNaN(Date.parse(scheduledAt))) {
     res.status(400).json({ error: "Invalid scheduledAt" });
     return;
   }
@@ -102,6 +99,52 @@ app.post("/api/sessions", express.json(), async (req, res) => {
     res.status(201).json(newSession);
   } catch (error) {
     res.status(500).json({ error: "Failed to create session" });
+  }
+});
+
+// add a api endpoint for patching a session as completed
+app.patch("/api/sessions/:id/complete", async (req, res) => {
+  const { isAuthenticated, userId } = getAuth(req);
+
+  if (!isAuthenticated) {
+    res.status(401).json({ error: "User not authenticated" });
+    return;
+  }
+
+  const sessionId = req.params.id;
+
+  // validate sessionId
+  if (
+    !sessionId ||
+    isNaN(Number(sessionId)) ||
+    !Number.isInteger(Number(sessionId)) ||
+    Number(sessionId) <= 0 ||
+    !Number.isSafeInteger(Number(sessionId))
+  ) {
+    res.status(400).json({ error: "Invalid session ID" });
+    return;
+  }
+
+  try {
+    const updatedSession = await prisma.studySession.updateMany({
+      where: {
+        id: Number(sessionId),
+        ownerId: userId,
+        completedAt: null, // only update if the session is not already completed
+      },
+      // mark the completedAt field as the current date and time
+      data: {
+        completedAt: new Date(),
+      },
+    });
+
+    if (updatedSession.count === 0) {
+      res.status(404).json({ error: "Session not found or not owned by user" });
+      return;
+    }
+    res.json({ message: "Session marked as completed" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update session" });
   }
 });
 
