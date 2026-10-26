@@ -12,3 +12,13 @@ datasource db {
   provider = "postgresql"
 }
 
+model StudySession {
+  id        Int      @id @default(autoincrement())
+  ownerId   String
+  subject   String
+  scheduledAt DateTime
+  durationMinutes  Int
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
