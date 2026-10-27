@@ -27,6 +27,7 @@ function App() {
   const [subject, setSubject] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [completedAt, setCompletedAt] = useState("");
 
   // create a function that sends a request to the /api/sessions that returns an array of sessions for the current user.
   async function getSessions() {
@@ -51,7 +52,9 @@ function App() {
       setStudySessions(data);
       setHasLoaded(true);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to load sessions");
+      setError(
+        error instanceof Error ? error.message : "Failed to load sessions",
+      );
     } finally {
       setLoading(false);
     }
@@ -91,12 +94,41 @@ function App() {
       setScheduledAt("");
       await getSessions();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to create session");
+      setError(
+        error instanceof Error ? error.message : "Failed to create session",
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  // create an api endpoint that sends a patch api request to /api/sessions/:id that marks a study session as completed for the current user. The function should take in the id of the session as a parameter.
+  async function completeSession(id: number) {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+
+      const response = await fetch(`/api/sessions/${id}/complete`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      await getSessions();
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Failed to complete session",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <>
       <header>
@@ -113,7 +145,8 @@ function App() {
             {loading ? "Loading..." : "Get Sessions"}
           </button>
           {error && <p role="alert">{error}</p>}
-          {hasLoaded && !loading &&
+          {hasLoaded &&
+            !loading &&
             (studySessions.length === 0 ? (
               <p>No sessions yet.</p>
             ) : (
@@ -121,12 +154,19 @@ function App() {
                 {studySessions.map((session) => (
                   <li key={session.id}>
                     {session.subject} - {session.durationMinutes} minutes -{" "}
-                    {new Date(session.scheduledAt).toLocaleString()} -{" "}
-                    {session.completedAt
-                      ? `Completed at ${new Date(
-                          session.completedAt,
-                        ).toLocaleString()}`
-                      : "Not completed"}
+                    {new Date(session.scheduledAt).toLocaleString()} - Completed
+                    at:{" "}
+                    {session.completedAt ? (
+                      new Date(session.completedAt).toLocaleString()
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void completeSession(session.id)}
+                        disabled={loading}
+                      >
+                        Mark as complete
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
