@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Show,
   SignInButton,
@@ -28,7 +28,7 @@ function getCurrentWeekRange() {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
-function App() {
+function Planner() {
   const { getToken } = useAuth();
   // define the study sessions as a state variable that is an array of objects
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
@@ -41,7 +41,7 @@ function App() {
   const [scheduledAt, setScheduledAt] = useState("");
 
   // create a function that sends a request to the /api/sessions that returns an array of sessions for the current user.
-  async function getSessions() {
+  const getSessions = useCallback(async () => {
     setLoading(true);
     setHasLoaded(false);
     setError(null);
@@ -70,7 +70,15 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [getToken]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void getSessions();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [getSessions]);
 
   // create a function that sends a request to /api/sessions that creates a new study session for the current user. The function should take in the subject, durationMinutes, and scheduledAt as parameters.
   async function createSession(
@@ -142,16 +150,7 @@ function App() {
     }
   }
   return (
-    <>
-      <header>
-        <Show when="signed-out">
-          <SignInButton />
-          <SignUpButton />
-        </Show>
-      </header>
-
-      <main>
-        <Show when="signed-in">
+    <main>
           <UserButton />
           <button onClick={getSessions} disabled={loading}>
             {loading ? "Loading..." : "Get Sessions"}
@@ -222,8 +221,24 @@ function App() {
               {loading ? "Working..." : "Create Session"}
             </button>
           </form>
+    </main>
+  );
+}
+
+function App() {
+  const { userId } = useAuth();
+
+  return (
+    <>
+      <header>
+        <Show when="signed-out">
+          <SignInButton />
+          <SignUpButton />
         </Show>
-      </main>
+      </header>
+      <Show when="signed-in">
+        <Planner key={userId ?? "signed-in"} />
+      </Show>
     </>
   );
 }
