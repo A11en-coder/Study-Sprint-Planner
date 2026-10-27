@@ -27,10 +27,31 @@ app.get("/api/sessions", async (req, res) => {
     return;
   }
 
+  const { start, end } = req.query;
+  if (typeof start !== "string" || typeof end !== "string") {
+    res.status(400).json({ error: "Start and end are required" });
+    return;
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime()) ||
+    startDate >= endDate
+  ) {
+    res.status(400).json({ error: "Invalid week range" });
+    return;
+  }
+
   try {
     const sessions = await prisma.studySession.findMany({
       where: {
         ownerId: userId,
+        scheduledAt: {
+          gte: startDate,
+          lt: endDate,
+        },
       },
       orderBy: {
         scheduledAt: "asc",

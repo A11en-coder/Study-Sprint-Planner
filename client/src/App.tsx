@@ -16,6 +16,18 @@ type StudySession = {
   completedAt: string | null;
 };
 
+function getCurrentWeekRange() {
+  const start = new Date();
+  const daysSinceMonday = (start.getDay() + 6) % 7;
+  start.setDate(start.getDate() - daysSinceMonday);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 function App() {
   const { getToken } = useAuth();
   // define the study sessions as a state variable that is an array of objects
@@ -27,7 +39,6 @@ function App() {
   const [subject, setSubject] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
-  const [completedAt, setCompletedAt] = useState("");
 
   // create a function that sends a request to the /api/sessions that returns an array of sessions for the current user.
   async function getSessions() {
@@ -36,8 +47,9 @@ function App() {
     setError(null);
     try {
       const token = await getToken();
+      const query = new URLSearchParams(getCurrentWeekRange());
 
-      const response = await fetch("/api/sessions", {
+      const response = await fetch(`/api/sessions?${query}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
