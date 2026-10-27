@@ -2,6 +2,9 @@
 
 A small, local full-stack app for planning study sessions and tracking which ones are done. A signed-in student can add sessions, see the current week's plan, and mark a session complete. Each student sees only their own sessions.
 
+## Link
+https://study-sprint-planner.onrender.com
+
 ## Goal
 
 Build a working app in at most three calendar days, with about two to three hours of work per day. The main learning goal is to connect sign-in to private data safely. A secondary goal is to show clear loading, empty, and error states and add one useful automated check.
