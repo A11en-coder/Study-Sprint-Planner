@@ -24,6 +24,10 @@ function App() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [subject, setSubject] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+
   // create a function that sends a request to the /api/sessions that returns an array of sessions for the current user.
   async function getSessions() {
     setLoading(true);
@@ -48,6 +52,46 @@ function App() {
       setHasLoaded(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to load sessions");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // create a function that sends a request to /api/sessions that creates a new study session for the current user. The function should take in the subject, durationMinutes, and scheduledAt as parameters.
+  async function createSession(
+    subject: string,
+    durationMinutes: number,
+    scheduledAt: string,
+  ) {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const scheduledAtIso = new Date(scheduledAt).toISOString();
+
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          subject,
+          durationMinutes,
+          scheduledAt: scheduledAtIso,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      setSubject("");
+      setDurationMinutes("");
+      setScheduledAt("");
+      await getSessions();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to create session");
     } finally {
       setLoading(false);
     }
@@ -87,6 +131,45 @@ function App() {
                 ))}
               </ul>
             ))}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void createSession(subject, Number(durationMinutes), scheduledAt);
+            }}
+          >
+            <label>
+              Subject:
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Duration (minutes):
+              <input
+                type="number"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(e.target.value)}
+                required
+                min="1"
+                step="1"
+              />
+            </label>
+            <label>
+              Scheduled At:
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" disabled={loading}>
+              {loading ? "Working..." : "Create Session"}
+            </button>
+          </form>
         </Show>
       </main>
     </>
