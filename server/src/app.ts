@@ -1,9 +1,15 @@
 import express from "express";
 import { clerkMiddleware, getAuth } from "@clerk/express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { prisma } from "./db.ts";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+app.get("/health", (_req, res) => {
+  res.send("ok");
+});
 
 app.use(clerkMiddleware());
 
@@ -169,7 +175,26 @@ app.patch("/api/sessions/:id/complete", async (req, res) => {
   }
 });
 
-// Start the server and listen on the specified port
-app.listen(PORT, () => {
-  console.log(`Example app listening at http://localhost:${PORT}`);
+if (process.env.NODE_ENV === "production") {
+  const clientDistPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../client/dist",
+  );
+
+  app.use(express.static(clientDistPath));
+  app.use((req, res, next) => {
+    if (
+      req.method !== "GET" ||
+      req.path === "/api" ||
+      req.path.startsWith("/api/")
+    ) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(clientDistPath, "index.html"));
+  });
+}
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Study Sprint Planner listening on port ${PORT}`);
 });

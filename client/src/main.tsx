@@ -4,9 +4,15 @@ import "./index.css";
 import App from "./App.tsx";
 import { ClerkProvider } from "@clerk/react";
 
+const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!publishableKey) {
+  throw new Error("VITE_CLERK_PUBLISHABLE_KEY is not set");
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey}>
       <App />
     </ClerkProvider>
   </StrictMode>,

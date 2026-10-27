@@ -17,6 +17,8 @@
   },
   "scripts": {
     "dev": "node --watch src/app.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate": "prisma generate",
+    "migrate:deploy": "prisma migrate deploy"
   }
 }
